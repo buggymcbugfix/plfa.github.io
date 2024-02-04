@@ -78,7 +78,8 @@ successor of two; and so on.
 Write out `7` in longhand.
 
 ```agda
--- Your code goes here
+seven : ℕ
+seven = suc (suc (suc (suc (suc (suc (suc zero))))))
 ```
 
 You will need to give both a type signature and definition for the
@@ -513,7 +514,12 @@ Define exponentiation, which is given by the following equations:
 Check that `3 ^ 4` is `81`.
 
 ```agda
--- Your code goes here
+_^_ : ℕ → ℕ → ℕ
+m ^ zero = 1
+m ^ suc n = m * (m ^ n)
+
+3^4≡81 : 3 ^ 4 ≡ 81
+3^4≡81 = refl
 ```
 
 
@@ -943,7 +949,57 @@ represents a positive natural, and represent zero by `⟨⟩ O`.
 Confirm that these both give the correct answer for zero through four.
 
 ```agda
--- Your code goes here
+revBinAcc : Bin → Bin → Bin
+revBinAcc acc ⟨⟩ = acc
+revBinAcc acc (n O) = revBinAcc (acc O) n
+revBinAcc acc (n I) = revBinAcc (acc I) n
+
+revBin : Bin → Bin
+revBin = revBinAcc ⟨⟩
+
+stripTrailingZeros : Bin → Bin
+stripTrailingZeros (n O) = stripTrailingZeros n
+stripTrailingZeros n = n
+
+stripLeadingZeros : Bin → Bin
+stripLeadingZeros n = revBin (stripTrailingZeros (revBin n))
+
+stripLeadingZeros_test : stripLeadingZeros (⟨⟩ O O I O I I) ≡ (⟨⟩ I O I I)
+stripLeadingZeros_test = refl
+
+inc : Bin → Bin
+inc (n O) = n I
+inc (n I) = (inc n) O
+inc ⟨⟩ = ⟨⟩ I
+
+inc_test0 : inc (⟨⟩ O) ≡ ⟨⟩ I
+inc_test0 = refl
+
+inc_test1 : inc (⟨⟩ I) ≡ ⟨⟩ I O
+inc_test1 = refl
+
+inc_test2 : inc (⟨⟩ I O) ≡ ⟨⟩ I I
+inc_test2 = refl
+
+inc_test3 : inc (⟨⟩ I I) ≡ ⟨⟩ I O O
+inc_test3 = refl
+
+inc_test4 : inc (⟨⟩ I O O) ≡ ⟨⟩ I O I
+inc_test4 = refl
+
+to : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = 0
+from (n O) = from n * 2
+from (n I) = 1 + from n * 2
+
+-- TODO: Would like to prove `from . to` identity (roundtrip). It's probaby nigh impossible.
+-- fromToIdentity : {n : ℕ} → from (to n) ≡ n
+-- fromToIdentity {zero} = refl
+-- fromToIdentity {suc n} = {!   !}
 ```
 
 

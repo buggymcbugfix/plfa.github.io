@@ -483,6 +483,14 @@ Our second lemma does the same for `suc` on the second argument:
 
 Here is the lemma's statement and proof:
 ```agda
+foo : (m n : ℕ) → m + suc n ≡ suc m + n
+foo zero n = refl
+foo (suc m) n = cong suc (foo m n)
+
++-suc' : ∀ (m n : ℕ) → m + suc n ≡ suc (m + n)
++-suc' zero n = refl
++-suc' (suc m) n = cong suc (+-suc' m n)
+
 +-suc : ∀ (m n : ℕ) → m + suc n ≡ suc (m + n)
 +-suc zero n =
   begin
@@ -545,6 +553,20 @@ yield the needed equation.  This completes the second lemma.
 
 Finally, here is our proposition's statement and proof:
 ```agda
++-comm' : ∀ (m n : ℕ) → m + n ≡ n + m
++-comm' m zero = +-identityʳ m
++-comm' m (suc n) = begin
+    m + (suc n)
+  ≡⟨ +-suc m n ⟩
+    suc m + n
+  ≡⟨ refl ⟩
+    suc (m + n)
+  ≡⟨ cong suc (+-comm' m n) ⟩
+    suc (n + m)
+  ≡⟨ refl ⟩
+    suc n + m
+  ∎
+
 +-comm : ∀ (m n : ℕ) → m + n ≡ n + m
 +-comm m zero =
   begin
@@ -623,9 +645,9 @@ Here is an example:
   begin
     (m + n) + (p + q)
   ≡⟨ sym (+-assoc (m + n) p q) ⟩
-    ((m + n) + p) + q
+    m + n + p + q
   ≡⟨ cong (_+ q) (+-assoc m n p) ⟩
-    (m + (n + p)) + q
+    m + (n + p) + q
   ∎
 ```
 No induction is required, we simply apply associativity twice.
@@ -890,7 +912,8 @@ just apply the previous results which show addition
 is associative and commutative.
 
 ```agda
--- Your code goes here
++-swap : (m n p : ℕ) → m + (n + p) ≡ n + (m + p)
++-swap m n p rewrite sym (+-assoc m n p) | +-comm m n  | +-assoc n m p = refl
 ```
 
 
@@ -903,7 +926,19 @@ Show multiplication distributes over addition, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+*-distrib-+ : (m n p : ℕ) → (m + n) * p ≡ m * p + n * p
+*-distrib-+ zero n p = refl
+*-distrib-+ (suc m) n p = begin
+    (suc m + n) * p
+  ≡⟨ refl ⟩
+    p + ((m + n) * p)
+  ≡⟨ cong (p +_) (*-distrib-+ m n p) ⟩
+    p + ((m * p) + (n * p))
+  ≡⟨ sym (+-assoc p (m * p) (n * p)) ⟩
+    (p + (m * p)) + (n * p)
+  ≡⟨ refl ⟩
+    suc m * p + n * p
+  ∎
 ```
 
 
@@ -916,7 +951,19 @@ Show multiplication is associative, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+*-assoc : (m n p : ℕ) → (m * n) * p ≡ m * (n * p)
+*-assoc zero n p = refl
+*-assoc (suc m) n p = begin
+    (suc m * n) * p
+  ≡⟨ refl ⟩
+    (n + m * n) * p
+  ≡⟨ *-distrib-+ n (m * n) p ⟩
+    n * p + m * n * p
+  ≡⟨ cong (n * p +_) (*-assoc m n p) ⟩
+    (n * p) + m * (n * p)
+  ≡⟨ refl ⟩
+    suc m * (n * p)
+  ∎
 ```
 
 
@@ -930,7 +977,41 @@ for all naturals `m` and `n`.  As with commutativity of addition,
 you will need to formulate and prove suitable lemmas.
 
 ```agda
--- Your code goes here
+open import Function.Base using (_∘_)
+
+*-zeroʳ : (n : ℕ) → n * zero ≡ zero
+*-zeroʳ zero = refl
+*-zeroʳ (suc n) = *-zeroʳ n
+
+*-suc : (m n : ℕ) → m * suc n ≡ m + m * n
+*-suc zero n = refl
+*-suc (suc m) n = begin
+    suc m * suc n
+  ≡⟨⟩
+    suc n + m * suc n
+  ≡⟨⟩
+    suc (n + m * suc n)
+  ≡⟨ cong (suc ∘ (n +_)) (*-suc m n) ⟩
+    suc (n + (m + m * n))
+  ≡⟨ cong suc (sym (+-assoc n m (m * n))) ⟩
+    suc (n + m + m * n)
+  ≡⟨ cong (suc ∘ (_+ m * n)) (+-comm n m) ⟩
+    suc (m + n + m * n)
+  ≡⟨ cong suc (+-assoc m n (m * n)) ⟩
+    suc (m + (n + m * n))
+  ∎
+
+*-comm : ∀ (m n : ℕ) → m * n ≡ n * m
+*-comm m zero = *-zeroʳ m
+*-comm m (suc n) = begin
+    m * suc n
+  ≡⟨ *-suc m n ⟩
+    m + m * n
+  ≡⟨ cong (m +_) (*-comm m n) ⟩
+    m + n * m
+  ≡⟨⟩
+    suc n * m
+  ∎
 ```
 
 
@@ -943,7 +1024,9 @@ Show
 for all naturals `n`. Did your proof require induction?
 
 ```agda
--- Your code goes here
+0∸n≡0 : (n : ℕ) → zero ∸ n ≡ zero
+0∸n≡0 zero = refl
+0∸n≡0 (suc n) = refl
 ```
 
 
@@ -956,7 +1039,9 @@ Show that monus associates with addition, that is,
 for all naturals `m`, `n`, and `p`.
 
 ```agda
--- Your code goes here
+∸-+-assoc : (m n p : ℕ) → m ∸ n ∸ p ≡ m ∸ (n + p)
+∸-+-assoc zero n p rewrite 0∸n≡0 n | 0∸n≡0 p | 0∸n≡0 (n + p) = refl
+∸-+-assoc (suc m) n p = {!   !}
 ```
 
 
