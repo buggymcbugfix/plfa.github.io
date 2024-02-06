@@ -900,7 +900,6 @@ typing `C-c C-r` will fill it in, completing the proof:
     +-assoc′ zero n p = refl
     +-assoc′ (suc m) n p rewrite +-assoc′ m n p = refl
 
-
 #### Exercise `+-swap` (recommended) {#plus-swap}
 
 Show
@@ -1040,8 +1039,9 @@ for all naturals `m`, `n`, and `p`.
 
 ```agda
 ∸-+-assoc : (m n p : ℕ) → m ∸ n ∸ p ≡ m ∸ (n + p)
-∸-+-assoc zero n p rewrite 0∸n≡0 n | 0∸n≡0 p | 0∸n≡0 (n + p) = refl
-∸-+-assoc (suc m) n p = {!   !}
+∸-+-assoc m zero p = refl
+∸-+-assoc zero (suc n) p = 0∸n≡0 p
+∸-+-assoc (suc m) (suc n) p = ∸-+-assoc m n p
 ```
 
 

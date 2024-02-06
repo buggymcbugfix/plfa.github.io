@@ -996,10 +996,17 @@ from ⟨⟩ = 0
 from (n O) = from n * 2
 from (n I) = 1 + from n * 2
 
+inc-suc : (b : Bin) → from (inc b) ≡ suc (from b)
+inc-suc ⟨⟩ = refl
+inc-suc (b O) = refl
+inc-suc (b I) rewrite inc-suc b = refl
+
 -- TODO: Would like to prove `from . to` identity (roundtrip). It's probaby nigh impossible.
--- fromToIdentity : {n : ℕ} → from (to n) ≡ n
--- fromToIdentity {zero} = refl
--- fromToIdentity {suc n} = {!   !}
+fromToIdentity : {n : ℕ} → from (to n) ≡ n
+fromToIdentity {zero} = refl
+fromToIdentity {suc n} rewrite inc-suc (to n) | fromToIdentity {n} = refl
+
+
 ```
 
 
