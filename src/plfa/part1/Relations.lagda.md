@@ -89,7 +89,7 @@ For example, here in inference rule notation is the proof that
 
 And here is the corresponding Agda proof:
 ```agda
-_ : 2 ≤ 4
+_ : 2 ≤ 2
 _ = s≤s (s≤s z≤n)
 ```
 
@@ -242,9 +242,8 @@ partial order but not a total order.
 
 Give an example of a preorder that is not a partial order.
 
-```agda
--- Your code goes here
-```
+The set of plus-right-preserves-leqtball players in the Premier League, with the relation
+"X plays-for-a-higher-or-equal-ranking-team-than Y"
 
 Give an example of a partial order that is not a total order.
 
@@ -287,6 +286,14 @@ hold, then `m ≤ p` holds.  Again, `m`, `n`, and `p` are implicit:
   → m ≤ p
 ≤-trans z≤n       _          =  z≤n
 ≤-trans (s≤s m≤n) (s≤s n≤p)  =  s≤s (≤-trans m≤n n≤p)
+
+≤-transᵥ : ∀ {m n p : ℕ}
+  → m ≤ n
+  → n ≤ p
+    -----
+  → m ≤ p
+≤-transᵥ z≤n np = z≤n
+≤-transᵥ (s≤s mn) (s≤s np) = s≤s (≤-transᵥ mn np)
 ```
 Here the proof is by induction on the _evidence_ that `m ≤ n`.  In the
 base case, the first inequality holds by `z≤n` and must show `zero ≤ p`,
@@ -341,6 +348,14 @@ antisymmetric: for all naturals `m` and `n`, if both `m ≤ n` and
   → m ≡ n
 ≤-antisym z≤n       z≤n        =  refl
 ≤-antisym (s≤s m≤n) (s≤s n≤m)  =  cong suc (≤-antisym m≤n n≤m)
+
+≤-antisymᵥ : ∀ {m n : ℕ}
+  → m ≤ n
+  → n ≤ m
+    -----
+  → m ≡ n
+≤-antisymᵥ z≤n z≤n = refl
+≤-antisymᵥ (s≤s mn) (s≤s nm) = cong suc (≤-antisymᵥ mn nm)
 ```
 Again, the proof is by induction over the evidence that `m ≤ n`
 and `n ≤ m` hold.
@@ -361,9 +376,10 @@ follows by congruence.
 The above proof omits cases where one argument is `z≤n` and one
 argument is `s≤s`.  Why is it ok to omit them?
 
-```agda
--- Your code goes here
-```
+Answer:
+When `m = 0`, we have `0 ≤ n` and `n ≤ 0`. By the definition of `≤`, `n` can only
+be `0`. Similarly for `n = 0`, `m` can only be `0`.
+
 
 
 ## Total
@@ -502,6 +518,13 @@ The proof is straightforward using the techniques we have learned, and is best
 broken into three parts. First, we deal with the special case of showing
 addition is monotonic on the right:
 ```agda
++-monoʳ-≤ᵥ : ∀ (n p q : ℕ)
+  → p ≤ q
+    -------------
+  → n + p ≤ n + q
++-monoʳ-≤ᵥ zero p q pq = pq
++-monoʳ-≤ᵥ (suc n) p q pq = s≤s (+-monoʳ-≤ᵥ n p q pq)
+
 +-monoʳ-≤ : ∀ (n p q : ℕ)
   → p ≤ q
     -------------
@@ -541,6 +564,44 @@ Third, we combine the two previous results:
     -------------
   → m + p ≤ n + q
 +-mono-≤ m n p q m≤n p≤q  =  ≤-trans (+-monoˡ-≤ m n p m≤n) (+-monoʳ-≤ n p q p≤q)
+
+-- My proof below works too, but it shows lack of profound insight, as opposed
+-- to the proof using transitivity.
+
+suc-right-preserves-leq : {n m : ℕ}
+  → n ≤ m
+    ---------
+  → n ≤ suc m
+suc-right-preserves-leq {zero} {_} _ = z≤n
+suc-right-preserves-leq (s≤s nm)     = s≤s (suc-right-preserves-leq nm)
+
+plus-right-preserves-leq : (n p q : ℕ)
+  → p ≤ q
+    ---------
+  → p ≤ n + q
+plus-right-preserves-leq zero p q pq
+  = pq
+plus-right-preserves-leq (suc n) zero q pq
+  = z≤n
+plus-right-preserves-leq (suc n) (suc p) (suc q) (s≤s pq)
+  = s≤s (plus-right-preserves-leq n p (suc q) (suc-right-preserves-leq pq))
+
++-mono-≤ᵥ : ∀ (m n p q : ℕ)
+  → m ≤ n
+  → p ≤ q
+    -------------
+  → m + p ≤ n + q
++-mono-≤ᵥ zero n p q m≤n p≤q
+  = plus-right-preserves-leq n p q p≤q
++-mono-≤ᵥ m n zero q m≤n p≤q
+  rewrite +-identityʳ m | +-comm n q
+  = plus-right-preserves-leq q m n m≤n
++-mono-≤ᵥ (suc m) (suc n) p q (s≤s m≤n) p≤q
+  = s≤s (+-mono-≤ᵥ m n p q m≤n p≤q)
++-mono-≤ᵥ m n (suc p) (suc q) m≤n (s≤s p≤q)
+  rewrite +-comm m (suc p) | +-comm n (suc q)
+  = s≤s (+-mono-≤ᵥ p q m n p≤q m≤n)
+
 ```
 Invoking `+-monoˡ-≤ m n p m≤n` proves `m + p ≤ n + p` and invoking
 `+-monoʳ-≤ n p q p≤q` proves `n + p ≤ n + q`, and combining these with
@@ -552,7 +613,28 @@ transitivity proves `m + p ≤ n + q`, as was to be shown.
 Show that multiplication is monotonic with regard to inequality.
 
 ```agda
--- Your code goes here
+open import Data.Nat using (_*_)
+open import Data.Nat.Properties using (*-comm)
+
+*-monoʳ-≤ : ∀ (n p q : ℕ)
+  → p ≤ q
+    -------------
+  → n * p ≤ n * q
+*-monoʳ-≤ zero p q pq = z≤n
+*-monoʳ-≤ (suc n) p q pq = +-mono-≤ p q (n * p) (n * q) pq (*-monoʳ-≤ n p q pq)
+
+*-monoˡ-≤ : ∀ (m n p : ℕ)
+  → m ≤ n
+    -------------
+  → m * p ≤ n * p
+*-monoˡ-≤ m n p mn rewrite *-comm m p | *-comm n p = *-monoʳ-≤ p m n mn
+
+*-mono-≤ : ∀ (m n p q : ℕ)
+  → m ≤ n
+  → p ≤ q
+    -------------
+  → m * p ≤ n * q
+*-mono-≤ m n p q mn pq = ≤-trans (*-monoˡ-≤ m n p mn) (*-monoʳ-≤ n p q pq)
 ```
 
 
@@ -600,7 +682,13 @@ Show that strict inequality is transitive. Use a direct proof. (A later
 exercise exploits the relation between < and ≤.)
 
 ```agda
--- Your code goes here
+<-trans : {m n p : ℕ}
+  → m < n
+  → n < p
+    -----
+  → m < p
+<-trans z<s      (s<s _ ) = z<s
+<-trans (s<s mn) (s<s np) = s<s (<-trans mn np)
 ```
 
 #### Exercise `trichotomy` (practice) {#trichotomy}
@@ -618,7 +706,32 @@ similar to that used for totality.
 [negation](/Negation/).)
 
 ```agda
--- Your code goes here
+data Trichotomous-< (m n : ℕ) : Set where
+
+  m<n :
+    m < n              →
+    ------------------
+    Trichotomous-< m n
+
+  m≡n :
+    m ≡ n              →
+    ------------------
+    Trichotomous-< m n
+
+  n<m :
+    n < m              →
+    ------------------
+    Trichotomous-< m n
+
+<-total : (m n : ℕ) → Trichotomous-< m n
+<-total zero zero    = m≡n refl
+<-total zero (suc n) = m<n z<s
+<-total (suc m) zero = n<m z<s
+<-total (suc m) (suc n) with <-total m n
+...         | m<n mn = m<n (s<s mn)
+...         | m≡n mn = m≡n (cong suc mn)
+...         | n<m nm = n<m (s<s nm)
+
 ```
 
 #### Exercise `+-mono-<` (practice) {#plus-mono-less}
@@ -627,7 +740,25 @@ Show that addition is monotonic with respect to strict inequality.
 As with inequality, some additional definitions may be required.
 
 ```agda
--- Your code goes here
++-monoʳ-< : ∀ {n p q : ℕ}
+  → p < q
+    -------------
+  → n + p < n + q
++-monoʳ-< {zero} pq = pq
++-monoʳ-< {suc n} pq = s<s (+-monoʳ-< pq)
+
++-monoˡ-< : ∀ {m n p : ℕ}
+  → m < n
+    -------------
+  → m + p < n + p
++-monoˡ-< {m} {n} {p} mn rewrite +-comm m p | +-comm n p = +-monoʳ-< mn
+
++-mono-< : ∀ {m n p q : ℕ}
+  → m < n
+  → p < q
+    -------------
+  → m + p < n + q
++-mono-< mn pq = <-trans (+-monoˡ-< mn) (+-monoʳ-< pq)
 ```
 
 #### Exercise `≤→<, <→≤` (recommended) {#leq-iff-less}
@@ -635,7 +766,13 @@ As with inequality, some additional definitions may be required.
 Show that `suc m ≤ n` implies `m < n`, and conversely.
 
 ```agda
--- Your code goes here
+≤→< : {m n : ℕ} → suc m ≤ n → m < n
+≤→< {zero} {suc n} _ = z<s
+≤→< {suc m} {suc n} (s≤s mn) = s<s (≤→< mn)
+
+<→≤ : {m n : ℕ} → m < n → suc m ≤ n
+<→≤ {zero} {suc n} z<s = s≤s z≤n
+<→≤ {suc m} {suc n} (s<s mn) = s≤s (<→≤ mn)
 ```
 
 #### Exercise `<-trans-revisited` (practice) {#less-trans-revisited}
@@ -645,7 +782,15 @@ using the relation between strict inequality and inequality and
 the fact that inequality is transitive.
 
 ```agda
--- Your code goes here
+<-trans-revisited : {m n p : ℕ}
+  → m < n
+  → n < p
+    -----
+  → m < p
+<-trans-revisited mn np = let
+  mn' = <→≤ mn
+  np' = <→≤ np
+  in {!   !}
 ```
 
 
@@ -752,7 +897,13 @@ successor of the sum of two even numbers, which is even.
 Show that the sum of two odd numbers is even.
 
 ```agda
--- Your code goes here
+o+o≡e : ∀ {m n : ℕ}
+  → odd m
+  → odd n
+    ------------
+  → even (m + n)
+o+o≡e (suc zero) on = suc on
+o+o≡e (suc (suc om)) on = suc (suc (o+o≡e om on))
 ```
 
 #### Exercise `Bin-predicates` (stretch) {#Bin-predicates}
@@ -812,7 +963,133 @@ properties of `One`. It may also help to prove the following:
     to (2 * n) ≡ (to n) O
 
 ```agda
--- Your code goes here
+data Bin : Set where
+  ⟨⟩ : Bin
+  _O : Bin → Bin
+  _I : Bin → Bin
+
+revBinAcc : Bin → Bin → Bin
+revBinAcc acc ⟨⟩ = acc
+revBinAcc acc (n O) = revBinAcc (acc O) n
+revBinAcc acc (n I) = revBinAcc (acc I) n
+
+revBin : Bin → Bin
+revBin = revBinAcc ⟨⟩
+
+stripTrailingZeros : Bin → Bin
+stripTrailingZeros (n O) = stripTrailingZeros n
+stripTrailingZeros n = n
+
+stripLeadingZeros : Bin → Bin
+stripLeadingZeros n = revBin (stripTrailingZeros (revBin n))
+
+stripLeadingZeros_test : stripLeadingZeros (⟨⟩ O O I O I I) ≡ (⟨⟩ I O I I)
+stripLeadingZeros_test = refl
+
+inc : Bin → Bin
+inc (n O) = n I
+inc (n I) = (inc n) O
+inc ⟨⟩ = ⟨⟩ I
+
+inc_test0 : inc (⟨⟩ O) ≡ ⟨⟩ I
+inc_test0 = refl
+
+inc_test1 : inc (⟨⟩ I) ≡ ⟨⟩ I O
+inc_test1 = refl
+
+inc_test2 : inc (⟨⟩ I O) ≡ ⟨⟩ I I
+inc_test2 = refl
+
+inc_test3 : inc (⟨⟩ I I) ≡ ⟨⟩ I O O
+inc_test3 = refl
+
+inc_test4 : inc (⟨⟩ I O O) ≡ ⟨⟩ I O I
+inc_test4 = refl
+
+to : ℕ → Bin
+to zero = ⟨⟩ O
+to (suc n) = inc (to n)
+
+from : Bin → ℕ
+from ⟨⟩ = 0
+from (b O) = from b * 2
+from (b I) = 1 + from b * 2
+
+inc-suc : (b : Bin) → from (inc b) ≡ suc (from b)
+inc-suc ⟨⟩ = refl
+inc-suc (b O) = refl
+inc-suc (b I) rewrite inc-suc b = refl
+
+fromToIdentity : {n : ℕ} → from (to n) ≡ n
+fromToIdentity {zero} = refl
+fromToIdentity {suc n} rewrite inc-suc (to n) | fromToIdentity {n} = refl
+
+data One : Bin → Set where
+
+  ⟨⟩I :
+      ----------
+      One (⟨⟩ I)
+
+  _O : ∀ {b : Bin}
+    → One b
+      ---------
+    → One (b O)
+
+  _I : ∀ {b : Bin}
+    → One b
+      ---------
+    → One (b I)
+
+data Can : Bin → Set where
+
+  ⟨⟩O :
+      ----------
+      Can (⟨⟩ O)
+
+  canonical : ∀ {b : Bin}
+      → One b
+        -----
+      → Can b
+
+_ : Can (⟨⟩ I O I I)
+_ = canonical (⟨⟩I O I I)
+
+inc-preserves-one : {b : Bin}
+  → One b
+    -----------
+  → One (inc b)
+inc-preserves-one ⟨⟩I = ⟨⟩I O
+inc-preserves-one (b O) = b I
+inc-preserves-one (b I) = inc-preserves-one b O
+
+inc-preserves-can : {b : Bin}
+  → Can b
+    -----------
+  → Can (inc b)
+inc-preserves-can ⟨⟩O = canonical ⟨⟩I
+inc-preserves-can (canonical b) = canonical (inc-preserves-one b)
+
+can-to : (n : ℕ)
+    ----------
+  → Can (to n)
+can-to zero = ⟨⟩O
+can-to (suc n) = inc-preserves-can (can-to n)
+
+
+foo : {b : Bin} → One b → to (from b * 2) ≡ b O
+foo b = {!   !}
+
+bar : {b : Bin} → One b → inc (to (from b * 2)) ≡ b I
+bar b = {!   !}
+
+can-roundtrip : {b : Bin}
+  → Can b
+    ---------------
+  → to (from b) ≡ b
+can-roundtrip ⟨⟩O = refl
+can-roundtrip (canonical ⟨⟩I) = refl
+can-roundtrip (canonical (b O)) = foo b
+can-roundtrip (canonical (b I)) = bar b
 ```
 
 ## Standard library

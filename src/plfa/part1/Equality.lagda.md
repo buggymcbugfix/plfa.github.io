@@ -296,9 +296,7 @@ Sadly, we cannot use the definition of trans' using ≡-Reasoning as the
 definition for trans. Can you see why? (Hint: look at the definition
 of `_≡⟨_⟩_`)
 
-```agda
--- Your code goes here
-```
+Answer: It would be a circular definition.
 
 ## Chains of equations, another example
 
@@ -332,7 +330,6 @@ We then repeat the proof of commutativity:
 ```agda
 +-comm : ∀ (m n : ℕ) → m + n ≡ n + m
 +-comm m zero =
-  begin
     m + zero
   ≡⟨ +-identity m ⟩
     m
@@ -340,7 +337,6 @@ We then repeat the proof of commutativity:
     zero + m
   ∎
 +-comm m (suc n) =
-  begin
     m + suc n
   ≡⟨ +-suc m n ⟩
     suc (m + n)
@@ -385,7 +381,92 @@ it to write out an alternative proof that addition is monotonic with
 regard to inequality.  Rewrite all of `+-monoˡ-≤`, `+-monoʳ-≤`, and `+-mono-≤`.
 
 ```agda
--- Your code goes here
+infix 4 _≤_
+
+data _≤_ : ℕ → ℕ → Set where
+
+  z≤n : ∀ {n : ℕ}
+      --------
+    → zero ≤ n
+
+  s≤s : ∀ {m n : ℕ}
+    → m ≤ n
+      -------------
+    → suc m ≤ suc n
+
+
+≤-refl : ∀ {n : ℕ}
+    -----
+  → n ≤ n
+≤-refl {zero} = z≤n
+≤-refl {suc n} = s≤s ≤-refl
+
+
+≤-trans : ∀ {m n p : ℕ}
+  → m ≤ n
+  → n ≤ p
+    -----
+  → m ≤ p
+≤-trans z≤n       _          =  z≤n
+≤-trans (s≤s m≤n) (s≤s n≤p)  =  s≤s (≤-trans m≤n n≤p)
+
+module ≤-Reasoning where
+
+  infixr 2 _≤⟨⟩_ step-≤ step-≡→≤
+  infix  3 _□
+
+  _≤⟨⟩_ : ∀ (x : ℕ) {y : ℕ}
+    → x ≤ y
+      -----
+    → x ≤ y
+  x ≤⟨⟩ x≤y  =  x≤y
+
+  step-≤ : ∀ (x {y z} : ℕ) → y ≤ z → x ≤ y → x ≤ z
+  step-≤ x y≤z x≤y  =  ≤-trans x≤y y≤z
+
+  syntax step-≤ x y≤z x≤y  =  x ≤⟨  x≤y ⟩ y≤z
+
+  ≡→≤ : {m n : ℕ} → m ≡ n → m ≤ n
+  ≡→≤ {zero} _ = z≤n
+  ≡→≤ {suc m} {suc .m} refl = s≤s ≤-refl
+
+  step-≡→≤ : ∀ (x {y z} : ℕ) → y ≤ z → x ≡ y → x ≤ z
+  step-≡→≤ x y≤z x≡y  =  ≤-trans (≡→≤ x≡y) y≤z
+
+  syntax step-≡→≤ x y≤z x≡y  =  x ≡→≤⟨  x≡y ⟩ y≤z
+
+
+  _□ : ∀ (x : ℕ)
+      -----
+    → x ≤ x
+  x □  =  ≤-refl
+
+open ≤-Reasoning
+
++-monoʳ-≤ : ∀ (n p q : ℕ)
+  → p ≤ q
+    -------------
+  → n + p ≤ n + q
++-monoʳ-≤ n p q pq =
+    n + p
+  ≤⟨ {!   !} ⟩
+    n + q
+  □
+
+
++-monoˡ-≤ : ∀ (m n p : ℕ)
+  → m ≤ n
+    -------------
+  → m + p ≤ n + p
++-monoˡ-≤ m n p mn =
+    m + p
+  ≡→≤⟨ +-comm m p ⟩
+    p + m
+  ≤⟨ +-monoʳ-≤ p m n mn ⟩
+    p + n
+  ≡→≤⟨ +-comm p n ⟩
+    n + p
+  □
 ```
 
 

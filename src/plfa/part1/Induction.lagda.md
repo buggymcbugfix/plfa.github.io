@@ -900,6 +900,7 @@ typing `C-c C-r` will fill it in, completing the proof:
     +-assoc′ zero n p = refl
     +-assoc′ (suc m) n p rewrite +-assoc′ m n p = refl
 
+
 #### Exercise `+-swap` (recommended) {#plus-swap}
 
 Show
